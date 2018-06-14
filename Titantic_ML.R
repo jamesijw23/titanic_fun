@@ -164,15 +164,87 @@ xgb_function = function(x_train,x_test,y_train,y_test,n_rounds){
   return(m_xgb)
 }
 
+binary_ml = function(x,y,p,knn_param,svm_cost,svm_kernel,
+                     cart_split = 2,
+                     cart_bucket = 1,
+                     rf_tree_number = 200, 
+                     n_rounds = 10){ 
+  
+  
+  df = data.frame(x,y)
+  #######################
+  ## 1) Preprocessing Data
+  #######################
+  ##--------
+  # a) Partition Data set (Train & Test)
+  ##--------
+  p_test = p
+  partitions = resample_partition(df,c(part0 = 1 - p_test,
+                                       part1 = p_test))
+  train_df = data.frame(partitions$part0)
+  test_df  = data.frame(partitions$part1)
+  
+  
+  ##--------
+  # b) Re-format Data for different Shallow Algos
+  ##--------
+  x_train = as.matrix(train_df %>% select(-y))
+  y_train = train_df %>% select(y)
+  y_train = as.numeric(factor(y_train$y))-1
+  
+  x_test = as.matrix(test_df %>% select(-y))
+  y_test = test_df %>% select(y)
+  y_test = as.numeric(factor(y_test$y))-1
+  
+  #################################
+  ## ML1: Logistic Regression
+  #################################
+  ## Run Model
+  m_log = log_function(train_df,x_test,y_test);
+  
+  #################################
+  ## ML2: KNN
+  #################################
+  ## Run Model
+  m_knn = knn_function(x_train,x_test,y_train,y_test,knn_param)
+  
+  #################################
+  ## ML3: CART
+  #################################
+  ## Run Model
+  m_cart = cart_function(train_df,x_test,y_test,cart_split,cart_bucket)
+  
+  #################################
+  ## ML4: Random Forest
+  #################################
+  ## Run Model
+  m_rf = rf_function(train_df,x_test,y_test,rf_tree_number)
+  
+  #################################
+  ## ML5: SVM
+  #################################
+  ## Run Model
+  m_svm = svm_function(train_df,x_test,y_test,svm_kernel,svm_cost)
+  
+  
+  #################################
+  ## ML6: XGBoost
+  #################################
+  ## Run Model
+  m_xgb = xgb_function(x_train,x_test,y_train,y_test,n_rounds)
+  
+  m_all = rbind(m_log,m_cart,m_knn,m_rf,m_svm,m_xgb)
+  return(m_all)
+}
 
-train_df = titanic_train %>% select(-Name)
-test_df = titanic_test %>% select(-Name)
 
-X_train = train_df %>% select(-Survived)
-y_train = train_df %>% select(Survived)
-X_test = test_df %>% select(-Survived)
-y_test = test_df %>% select(Survived)
 
+X = titanic_train %>% select(-Survived)
+y = titanic_train %>% select(Survived)
+
+met = binary_ml(X,y,p = 0.25,
+                knn_param = 3,svm_cost = 1,
+                svm_kernel = "radial")
 
 
 
