@@ -8,6 +8,7 @@ library(e1071)        ## SVM
 library(tidyr)        ## Organize Data
 library(ggplot2)      ## View Data
 library(titanic)      ## Get Data
+library(stringr)
 
 
 
@@ -200,13 +201,13 @@ binary_ml = function(x,y,p,knn_param,svm_cost,svm_kernel,
   ## ML1: Logistic Regression
   #################################
   ## Run Model
-  m_log = log_function(train_df,x_test,y_test);
+  #m_log = log_function(train_df,x_test,y_test);
   
   #################################
   ## ML2: KNN
   #################################
   ## Run Model
-  m_knn = knn_function(x_train,x_test,y_train,y_test,knn_param)
+  #m_knn = knn_function(x_train,x_test,y_train,y_test,knn_param)
   
   #################################
   ## ML3: CART
@@ -224,7 +225,7 @@ binary_ml = function(x,y,p,knn_param,svm_cost,svm_kernel,
   ## ML5: SVM
   #################################
   ## Run Model
-  m_svm = svm_function(train_df,x_test,y_test,svm_kernel,svm_cost)
+  #m_svm = svm_function(train_df,x_test,y_test,svm_kernel,svm_cost)
   
   
   #################################
@@ -237,12 +238,46 @@ binary_ml = function(x,y,p,knn_param,svm_cost,svm_kernel,
   return(m_all)
 }
 
+## Gender
+titanic_train$Gender = ifelse(titanic_train$Sex == "male",1,0)
+
+## Cabin Info
+cabina_asg = as.matrix(gsub('[0-9]+', '', titanic_train$Cabin))
+cabinfun = function(x){
+  if(x %in% "A"){
+    return(1)
+  } else if(x %in% "B"){
+    return(2)
+  } else if(x %in% "C"){
+    return(3)
+  } else if(x %in% "D"){
+    return(4)
+  } else if(x %in% "E"){
+    return(5)
+  } else if(x %in% "F"){
+    return(6)
+  } else if(x %in% "G"){
+    return(7)
+  } else{
+    return(0)
+  }  
+}
+titanic_train$cabin_info = unlist(apply(cabina_asg,1,cabinfun))
+
+## Embarked Info
+new_titanic_train$embark = ifelse(titanic_train$Embarked == "C",0,
+       ifelse(titanic_train$Embarked == "Q",1,2))
 
 
-X = titanic_train %>% select(-Survived)
-y = titanic_train %>% select(Survived)
+## Remove Non-Numeric Vales
+new_titanic_train = titanic_train %>% 
+  select(-Ticket,-Name,-Sex,-Cabin,-PassengerId,-Embarked)
 
-met = binary_ml(X,y,p = 0.25,
+
+x = new_titanic_train %>% select(-Survived)
+y = new_titanic_train %>% select(Survived)
+colnames(y) = "y"
+met = binary_ml(x,y,p = 0.25,
                 knn_param = 3,svm_cost = 1,
                 svm_kernel = "radial")
 
